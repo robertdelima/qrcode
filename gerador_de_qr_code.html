@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerador e Personalizador de QR Code High Performance</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Fast Bit-Matrix QRCode Generator Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.05);
+    }
+    .dark ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-300">
+
+  <!-- Header -->
+  <header class="w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="p-2 bg-emerald-500/10 text-emerald-500 rounded-xl">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+          </svg>
+        </div>
+        <h1 class="text-xl font-bold bg-gradient-to-r from-emerald-500 to-teal-600 bg-clip-text text-transparent">
+          QR Code Studio Pro
+        </h1>
+      </div>
+      
+      <!-- Dark/Light Mode Toggle Button -->
+      <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors focus:outline-none" aria-label="Alternar Tema">
+        <svg id="sunIcon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+        <svg id="moonIcon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed top-20 right-4 z-50 transform translate-y-[-100px] opacity-0 transition-all duration-300 ease-out pointer-events-none flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800 dark:bg-white text-white dark:text-slate-900 shadow-xl border border-slate-700 dark:border-slate-200">
+    <span id="toastIcon"></span>
+    <span id="toastMessage" class="text-sm font-medium"></span>
+  </div>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- Form Controls Section -->
+      <section class="lg:col-span-7 space-y-6">
+        
+        <!-- Input Box -->
+        <div class="bg-white dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur">
+          <h2 class="text-lg font-semibold mb-4 text-slate-900 dark:text-white flex items-center gap-2">
+            <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+            </svg>
+            Conteúdo do QR Code
+          </h2>
+
+          <div class="space-y-4">
+            <!-- URL/Text Input -->
+            <div>
+              <label for="qrInput" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                Link ou Texto *
+              </label>
+              <div class="relative">
+                <input 
+                  type="text" 
+                  id="qrInput" 
+                  placeholder="https://exemplo.com ou digite seu texto..." 
+                  class="w-full px-4 py-3 pr-10 rounded-xl bg-slate-50 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all text-sm"
+                  oninput="handleInputChange()"
+                />
+                <button 
+                  id="clearBtn" 
+                  onclick="clearInput()" 
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg hidden transition-colors"
+                  title="Limpar campo">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Title Input -->
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label for="titleInput" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Título do Site / Nome da Imagem
+                </label>
+                <span id="autoDetectedBadge" class="hidden text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                  Detectado automaticamente
+                </span>
+              </div>
+              <input 
+                type="text" 
+                id="titleInput" 
+                placeholder="Insira um link acima para autodetectar ou digite manualmente..." 
+                class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all text-sm"
+                oninput="handleTitleManualEdit()"
+              />
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">É desenhado na imagem final e usado como nome do arquivo PNG.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Customization Box -->
+        <div class="bg-white dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur">
+          <h2 class="text-lg font-semibold mb-4 text-slate-900 dark:text-white flex items-center gap-2">
+            <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-23"></path>
+            </svg>
+            Personalização Visual
+          </h2>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- QR Code Color -->
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                Cor dos Módulos
+              </label>
+              <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/90 p-2 rounded-xl border border-slate-300 dark:border-slate-700">
+                <input type="color" id="fgColorInput" value="#000000" class="w-8 h-8 rounded-lg cursor-pointer border-0 bg-transparent" oninput="handleInstantColorChange()">
+                <span id="fgColorHex" class="text-xs font-mono text-slate-600 dark:text-slate-300">#000000</span>
+              </div>
+            </div>
+
+            <!-- Background Color -->
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                Cor de Fundo
+              </label>
+              <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/90 p-2 rounded-xl border border-slate-300 dark:border-slate-700">
+                <input type="color" id="bgColorInput" value="#ffffff" class="w-8 h-8 rounded-lg cursor-pointer border-0 bg-transparent" oninput="handleInstantColorChange()">
+                <span id="bgColorHex" class="text-xs font-mono text-slate-600 dark:text-slate-300">#FFFFFF</span>
+              </div>
+            </div>
+
+            <!-- Include Title Checkbox -->
+            <div class="sm:col-span-2 pt-2">
+              <label class="inline-flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" id="includeTitleToggle" checked onchange="updatePreviewTitle()" class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 dark:bg-slate-900 border-slate-300 dark:border-slate-700">
+                <span class="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Imprimir título na imagem (com suporte a múltiplas linhas)
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Preview and Actions Section -->
+      <section class="lg:col-span-5 sticky top-24">
+        <div class="bg-white dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur flex flex-col items-center">
+          
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4 w-full text-center">
+            Pré-visualização em Tempo Real
+          </h2>
+
+          <!-- Card/Canvas Display Area -->
+          <div id="previewContainer" class="w-full flex flex-col items-center justify-center p-6 rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-100 dark:bg-slate-900/50 min-h-[320px] transition-all">
+            
+            <!-- Visible Canvas output -->
+            <div class="relative group max-w-full">
+              <canvas id="qrCanvas" class="rounded-xl shadow-md transition-transform duration-300 max-w-full h-auto"></canvas>
+            </div>
+
+            <p id="placeholderText" class="text-slate-400 dark:text-slate-500 text-sm text-center">
+              Insira um link ou texto acima para gerar o QR Code.
+            </p>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="w-full mt-6 space-y-3">
+            <button 
+              id="downloadBtn" 
+              onclick="downloadImage()" 
+              disabled
+              class="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-300 dark:disabled:bg-slate-800 disabled:text-slate-500 dark:disabled:text-slate-600 text-white font-medium rounded-xl shadow-lg shadow-emerald-600/20 disabled:shadow-none transition-all flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+              </svg>
+              <span>Salvar Imagem PNG</span>
+            </button>
+
+            <button 
+              id="shareBtn" 
+              onclick="shareQRCode()" 
+              disabled
+              class="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700/60 dark:hover:bg-slate-700 disabled:bg-slate-100 dark:disabled:bg-slate-800/40 text-slate-700 dark:text-slate-200 disabled:text-slate-400 dark:disabled:text-slate-600 font-medium rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path>
+              </svg>
+              <span>Compartilhar</span>
+            </button>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="mt-auto py-6 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500 dark:text-slate-400">
+    <p>Criado com HTML, CSS (Tailwind) e JavaScript • Seguro e Processado Localmente</p>
+  </footer>
+
+  <script>
+    // State management & High Performance Caching
+    let cachedMatrix = null;
+    let cachedText = '';
+    let animFrameId = null;
+    let userHasManuallyEditedTitle = false;
+
+    // Elements
+    const qrInput = document.getElementById('qrInput');
+    const titleInput = document.getElementById('titleInput');
+    const clearBtn = document.getElementById('clearBtn');
+    const fgColorInput = document.getElementById('fgColorInput');
+    const bgColorInput = document.getElementById('bgColorInput');
+    const fgColorHex = document.getElementById('fgColorHex');
+    const bgColorHex = document.getElementById('bgColorHex');
+    const includeTitleToggle = document.getElementById('includeTitleToggle');
+    const qrCanvas = document.getElementById('qrCanvas');
+    const placeholderText = document.getElementById('placeholderText');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const shareBtn = document.getElementById('shareBtn');
+    const autoDetectedBadge = document.getElementById('autoDetectedBadge');
+
+    // Theme initialization
+    function initTheme() {
+      if (localStorage.theme === 'light' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: light)').matches)) {
+        document.documentElement.classList.remove('dark');
+        document.getElementById('moonIcon').classList.remove('hidden');
+      } else {
+        document.documentElement.classList.add('dark');
+        document.getElementById('sunIcon').classList.remove('hidden');
+      }
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.theme = isDark ? 'dark' : 'light';
+      document.getElementById('sunIcon').classList.toggle('hidden', !isDark);
+      document.getElementById('moonIcon').classList.toggle('hidden', isDark);
+    }
+
+    // Infer title automatically from URL
+    function extractTitleFromUrl(text) {
+      if (!text) return '';
+      let urlStr = text.trim();
+      
+      if (!/^https?:\/\//i.test(urlStr)) {
+        if (/^[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/.test(urlStr)) {
+          urlStr = 'https://' + urlStr;
+        } else {
+          return '';
+        }
+      }
+
+      try {
+        const parsedUrl = new URL(urlStr);
+        let hostname = parsedUrl.hostname.replace(/^www\./i, '');
+        let pathname = parsedUrl.pathname.replace(/\/$/, '');
+
+        if (hostname.includes('github.com') && pathname.length > 1) {
+          const parts = pathname.split('/').filter(Boolean);
+          if (parts.length >= 2) return `${parts[1]} (${parts[0]} em GitHub)`;
+          if (parts.length === 1) return `Perfil de ${parts[0]} no GitHub`;
+        }
+        if (hostname.includes('instagram.com') && pathname.length > 1) {
+          const user = pathname.split('/').filter(Boolean)[0];
+          if (user) return `@${user} no Instagram`;
+        }
+        if (hostname.includes('linkedin.com')) {
+          return 'Perfil no LinkedIn';
+        }
+
+        let mainDomain = hostname.split('.')[0];
+        if (mainDomain) {
+          mainDomain = mainDomain.charAt(0).toUpperCase() + mainDomain.slice(1);
+        }
+
+        if (pathname && pathname !== '/') {
+          const lastSegment = pathname.split('/').filter(Boolean).pop();
+          if (lastSegment && lastSegment.length > 1) {
+            const cleanSegment = decodeURIComponent(lastSegment)
+              .replace(/[-_]/g, ' ')
+              .replace(/\.[^/.]+$/, '');
+            const formattedSegment = cleanSegment.charAt(0).toUpperCase() + cleanSegment.slice(1);
+            return `${mainDomain} - ${formattedSegment}`;
+          }
+        }
+
+        return mainDomain || hostname;
+      } catch (e) {
+        return '';
+      }
+    }
+
+    // High performance Bit-Matrix QR Code Generator using qrcode-generator
+    function getQRBitMatrix(text) {
+      if (text === cachedText && cachedMatrix) {
+        return cachedMatrix;
+      }
+      try {
+        // Automatic type detection & high error correction (H)
+        const qr = qrcode(0, 'H');
+        qr.addData(text);
+        qr.make();
+        
+        const count = qr.getModuleCount();
+        const matrix = [];
+        for (let r = 0; r < count; r++) {
+          const row = [];
+          for (let c = 0; c < count; c++) {
+            row.push(qr.isDark(r, c));
+          }
+          matrix.push(row);
+        }
+        cachedText = text;
+        cachedMatrix = matrix;
+        return matrix;
+      } catch (e) {
+        console.error("QR Code matrix error:", e);
+        return null;
+      }
+    }
+
+    // Fast Input Handler with RAF Scheduling
+    function handleInputChange() {
+      const val = qrInput.value.trim();
+      clearBtn.classList.toggle('hidden', val.length === 0);
+
+      if (!userHasManuallyEditedTitle || titleInput.value.trim() === '') {
+        const detectedTitle = extractTitleFromUrl(val);
+        if (detectedTitle) {
+          titleInput.value = detectedTitle;
+          autoDetectedBadge.classList.remove('hidden');
+        } else {
+          autoDetectedBadge.classList.add('hidden');
+        }
+      }
+
+      scheduleRender();
+    }
+
+    function handleTitleManualEdit() {
+      const val = titleInput.value.trim();
+      userHasManuallyEditedTitle = val.length > 0;
+      autoDetectedBadge.classList.add('hidden');
+      scheduleRender();
+    }
+
+    // Instant Color Update via Direct Canvas Repaint
+    function handleInstantColorChange() {
+      fgColorHex.innerText = fgColorInput.value.toUpperCase();
+      bgColorHex.innerText = bgColorInput.value.toUpperCase();
+      
+      // Request an immediate frame repaint for 60fps color drag performance
+      scheduleRender();
+    }
+
+    function scheduleRender() {
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+      animFrameId = requestAnimationFrame(() => {
+        renderCanvasFast();
+      });
+    }
+
+    function clearInput() {
+      qrInput.value = '';
+      if (!userHasManuallyEditedTitle) {
+        titleInput.value = '';
+      }
+      cachedText = '';
+      cachedMatrix = null;
+      clearBtn.classList.add('hidden');
+      autoDetectedBadge.classList.add('hidden');
+      scheduleRender();
+      qrInput.focus();
+    }
+
+    function updatePreviewTitle() {
+      scheduleRender();
+    }
+
+    // Multi-line Text Wrapping Helper for Canvas
+    function wrapText(ctx, text, maxWidth) {
+      const words = text.split(' ');
+      const lines = [];
+      let currentLine = '';
+
+      for (let i = 0; i < words.length; i++) {
+        const word = words[i];
+        const testLine = currentLine ? currentLine + ' ' + word : word;
+        const metrics = ctx.measureText(testLine);
+
+        if (metrics.width > maxWidth && currentLine !== '') {
+          lines.push(currentLine);
+          currentLine = word;
+        } else {
+          currentLine = testLine;
+        }
+      }
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+      return lines;
+    }
+
+    // Ultra-Fast Direct Canvas Repaint
+    function renderCanvasFast() {
+      const text = qrInput.value.trim();
+      
+      if (!text) {
+        const ctx = qrCanvas.getContext('2d');
+        ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
+        qrCanvas.width = 0;
+        qrCanvas.height = 0;
+        
+        placeholderText.classList.remove('hidden');
+        downloadBtn.disabled = true;
+        shareBtn.disabled = true;
+        return;
+      }
+
+      placeholderText.classList.add('hidden');
+      downloadBtn.disabled = false;
+      shareBtn.disabled = false;
+
+      const matrix = getQRBitMatrix(text);
+      if (!matrix) return;
+
+      const moduleCount = matrix.length;
+      const targetQRSize = 300;
+      const margin = 16; 
+      
+      // Determine module size
+      const cellSize = targetQRSize / moduleCount;
+      const qrActualSize = cellSize * moduleCount;
+      const padding = 24;
+      const canvasWidth = qrActualSize + (padding * 2);
+
+      const titleText = titleInput.value.trim();
+      const shouldIncludeTitle = includeTitleToggle.checked && titleText.length > 0;
+
+      const ctx = qrCanvas.getContext('2d');
+      ctx.font = '600 15px Inter, sans-serif';
+
+      let lines = [];
+      const lineHeight = 20;
+      if (shouldIncludeTitle) {
+        lines = wrapText(ctx, titleText, qrActualSize);
+      }
+
+      const textSectionHeight = lines.length > 0 ? (lines.length * lineHeight) + 12 : 0;
+      const canvasHeight = qrActualSize + (padding * 2) + textSectionHeight;
+
+      // Adjust canvas resolution
+      if (qrCanvas.width !== canvasWidth || qrCanvas.height !== canvasHeight) {
+        qrCanvas.width = canvasWidth;
+        qrCanvas.height = canvasHeight;
+      }
+
+      const fgColor = fgColorInput.value;
+      const bgColor = bgColorInput.value;
+
+      // 1. Fill background
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+      // 2. Draw QR Bit-matrix directly
+      ctx.fillStyle = fgColor;
+      for (let r = 0; r < moduleCount; r++) {
+        for (let c = 0; c < moduleCount; c++) {
+          if (matrix[r][c]) {
+            const x = padding + Math.floor(c * cellSize);
+            const y = padding + Math.floor(r * cellSize);
+            const w = Math.ceil((c + 1) * cellSize) - Math.floor(c * cellSize);
+            const h = Math.ceil((r + 1) * cellSize) - Math.floor(r * cellSize);
+            ctx.fillRect(x, y, w, h);
+          }
+        }
+      }
+
+      // 3. Draw Multi-line Title text if active
+      if (lines.length > 0) {
+        ctx.fillStyle = fgColor;
+        ctx.font = '600 15px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+
+        const startY = padding + qrActualSize + 12;
+        lines.forEach((line, index) => {
+          ctx.fillText(line, canvasWidth / 2, startY + (index * lineHeight));
+        });
+      }
+    }
+
+    // Helper: Sanitize string for valid filename
+    function getSanitizedFileName() {
+      const title = titleInput.value.trim();
+      if (title) {
+        return title.toLowerCase().replace(/[^a-z0-9_ -]/g, '').replace(/\s+/g, '_') + '_QRCode.png';
+      }
+      return 'QRCode.png';
+    }
+
+    // Download PNG
+    function downloadImage() {
+      if (!qrCanvas.width) return;
+
+      const imageURI = qrCanvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = getSanitizedFileName();
+      link.href = imageURI;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showToast('Imagem baixada com sucesso!', 'check');
+    }
+
+    // Share API / Fallback
+    async function shareQRCode() {
+      if (!qrCanvas.width) return;
+
+      try {
+        const fileName = getSanitizedFileName();
+        const blob = await new Promise((resolve) => qrCanvas.toBlob(resolve, 'image/png'));
+        const file = new File([blob], fileName, { type: 'image/png' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: titleInput.value.trim() || 'QR Code',
+            text: 'Confira este QR Code!'
+          });
+          showToast('Compartilhado com sucesso!', 'share');
+        } else if (navigator.clipboard) {
+          copyToClipboard(qrInput.value);
+        } else {
+          showToast('Compartilhamento não suportado. Use o botão Baixar.', 'info');
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          copyToClipboard(qrInput.value);
+        }
+      }
+    }
+
+    // Copy fallback
+    function copyToClipboard(text) {
+      const dummy = document.createElement('input');
+      document.body.appendChild(dummy);
+      dummy.value = text;
+      dummy.select();
+      document.execCommand('copy');
+      document.body.removeChild(dummy);
+      showToast('Link copiado para a área de transferência!', 'check');
+    }
+
+    // Toast notification function
+    function showToast(message, iconType = 'info') {
+      const toast = document.getElementById('toast');
+      const toastMessage = document.getElementById('toastMessage');
+      const toastIcon = document.getElementById('toastIcon');
+
+      let iconSVG = '';
+      if (iconType === 'check') {
+        iconSVG = `<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+      } else if (iconType === 'share') {
+        iconSVG = `<svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>`;
+      } else {
+        iconSVG = `<svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+      }
+
+      toastIcon.innerHTML = iconSVG;
+      toastMessage.innerText = message;
+
+      toast.classList.remove('translate-y-[-100px]', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-[-100px]', 'opacity-0');
+      }, 3000);
+    }
+
+    // Init page
+    window.onload = function() {
+      initTheme();
+    };
+  </script>
+</body>
+</html>
